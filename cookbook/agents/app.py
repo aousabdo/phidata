@@ -69,6 +69,18 @@ def main() -> None:
         st.session_state["ddg_search_enabled"] = ddg_search
         ddg_search_enabled = ddg_search
         restart_assistant()
+        
+    # Enable shell tools
+    if "shell_tools_enabled" not in st.session_state:
+        st.session_state["shell_tools_enabled"] = True
+    # Get shell_tools_enabled from session state if set
+    shell_tools_enabled = st.session_state["shell_tools_enabled"]
+    # Checkbox for enabling shell tools
+    shell_tools = st.sidebar.checkbox("Shell Tools", value=shell_tools_enabled, help="Enable shell tools.")
+    if shell_tools_enabled != shell_tools:
+        st.session_state["shell_tools_enabled"] = shell_tools
+        shell_tools_enabled = shell_tools
+        restart_assistant()
 
     # Enable finance tools
     if "finance_tools_enabled" not in st.session_state:
@@ -149,6 +161,23 @@ def main() -> None:
         investment_assistant_enabled = investment_assistant
         restart_assistant()
 
+
+    # Enable Statement of Work Assistant
+    if "sow_assistant_enabled" not in st.session_state:
+        st.session_state["sow_assistant_enabled"] = True
+    # Get sow_assistant_enabled from session state if set
+    sow_assistant_enabled = st.session_state["sow_assistant_enabled"]
+    # Checkbox for enabling web search
+    sow_assistant = st.sidebar.checkbox(
+        "Statement of Work Assistant",
+        value=sow_assistant_enabled,
+        help="Enable the statement of work assistant.",
+    )
+    if sow_assistant_enabled != sow_assistant:
+        st.session_state["sow_assistant_enabled"] = sow_assistant
+        sow_assistant_enabled = sow_assistant
+        restart_assistant()
+
     # Get the agent
     agent: Assistant
     if "agent" not in st.session_state or st.session_state["agent"] is None:
@@ -158,11 +187,13 @@ def main() -> None:
             calculator=calculator_enabled,
             ddg_search=ddg_search_enabled,
             file_tools=file_tools_enabled,
+            shell_tools=shell_tools_enabled,
             finance_tools=finance_tools_enabled,
             data_analyst=data_analyst_enabled,
             python_assistant=python_assistant_enabled,
             research_assistant=research_assistant_enabled,
             investment_assistant=investment_assistant_enabled,
+            sow_assistant=sow_assistant_enabled,
         )
         st.session_state["agent"] = agent
     else:
@@ -274,11 +305,13 @@ def main() -> None:
                 calculator=calculator_enabled,
                 ddg_search=ddg_search_enabled,
                 file_tools=file_tools_enabled,
+                shell_tools=shell_tools_enabled,
                 finance_tools=finance_tools_enabled,
                 data_analyst=data_analyst_enabled,
                 python_assistant=python_assistant_enabled,
                 research_assistant=research_assistant_enabled,
                 investment_assistant=investment_assistant_enabled,
+                
                 run_id=new_agent_run_id,
             )
             st.rerun()

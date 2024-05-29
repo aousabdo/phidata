@@ -7,6 +7,7 @@ from typing import List
 from phi.assistant import Assistant
 from phi.tools import Toolkit
 from phi.tools.exa import ExaTools
+from phi.tools.shell import ShellTools
 from phi.tools.calculator import Calculator
 from phi.tools.duckduckgo import DuckDuckGo
 from phi.tools.yfinance import YFinanceTools
@@ -32,11 +33,13 @@ def get_agent(
     calculator: bool = False,
     ddg_search: bool = False,
     file_tools: bool = False,
+    shell_tools: bool = False,
     finance_tools: bool = False,
     data_analyst: bool = False,
     python_assistant: bool = False,
     research_assistant: bool = False,
     investment_assistant: bool = False,
+    sow_assistant: bool = False,
     user_id: Optional[str] = None,
     run_id: Optional[str] = None,
     debug_mode: bool = True,
@@ -61,6 +64,11 @@ def get_agent(
         )
     if ddg_search:
         tools.append(DuckDuckGo(fixed_max_results=3))
+    if shell_tools:
+        tools.append(ShellTools())
+        extra_instructions.append(
+            "You can use the `run_shell_command` tool to run shell commands. For example, `run_shell_command(args='ls')`."
+        )
     if finance_tools:
         tools.append(
             YFinanceTools(stock_price=True, company_info=True, analyst_recommendations=True, company_news=True)
@@ -223,7 +231,65 @@ def get_agent(
                 "Never provide investment advise without the investment report.",
             ]
         )
+    if sow_assistant:
+        _sow_assistant = Assistant(
+            name="SoW Assistant",
+            role="Write a detailed DHS TSA SoW about a given topic that is selected by the user",
+            llm=OpenAIChat(model=llm_id),
+            description="You are a DHS TSA SoW writer tasked with writing a detailed SoW about a given topic that is selected by the user.",
+            instructions=[
+                "For the selected topic, gather comprehensive data relevant to DHS TSA requirements, including security protocols, technology implementations, and operational strategies.",
+                "Thoroughly analyze the collected data and draft a detailed Statement of Work (SoW) that meets DHS TSA standards as outlined in the <report_format> provided below.",
+                "Incorporate precise and actionable objectives, deliverables, and timelines based on the analysis.",
+                "Ensure all numerical data is clearly presented with appropriate units (e.g., quantities, percentages) and contextual relevance.",
+                "REMEMBER: This SoW is for a critical governmental project, so maintaining the highest standard of accuracy and detail is crucial.",
+            ],
+            expected_output=dedent(
+                """\
+            <report_format>
+            ### [Statement of Work - Department of Homeland Security, Transportation Security Administration]
 
+            **1. Project Overview:**
+            - **Objective:** {state the primary objectives of the project}
+            - **Scope:** {define the scope of the project including key deliverables}
+            - **Background:** {provide background information or context relevant to the project}
+
+            **2. Requirements:**
+            - **Technical Requirements:** {list the technical requirements necessary for the project}
+            - **Security Protocols:** {detail the security measures and protocols that must be adhered to}
+            - **Personnel Requirements:** {specify qualifications and clearance levels required for personnel involved}
+
+            **3. Project Timeline:**
+            - **Start Date:** {specify the project start date}
+            - **End Date:** {specify the project end date}
+            - **Key Milestones:** {list the major milestones and their expected completion dates}
+
+            **4. Budget and Funding:**
+            - **Total Budget:** {provide the total budget allocated for the project}
+            - **Cost Breakdown:** {offer a detailed breakdown of costs by category}
+
+            **5. Evaluation and Reporting:**
+            - **Performance Metrics:** {define how the performance and success of the project will be measured}
+            - **Reporting Schedule:** {outline the frequency and format of project reporting}
+
+            **6. Additional Information:**
+            - **Risk Management:** {describe the risk management strategies that will be employed}
+            - **Amendment Procedure:** {explain the process for making amendments to the SoW}
+            - **Point of Contact:** {list the primary point of contact for the project}
+            </report_format>
+            """
+            ),
+            tools=[DuckDuckGo(fixed_max_results=10)],
+            # This setting tells the LLM to format messages in markdown
+            markdown=True,
+            add_datetime_to_instructions=True,
+            debug_mode=debug_mode,
+        )
+        team.append(_sow_assistant)
+        extra_instructions.append(
+            "To draft a Statement of Work (SoW) that adheres to DHS TSA standards, delegate the task to the `SoW Assistant`. "
+            "Deliver the SoW in the specified <report_format> directly to the user, ensuring no extraneous text such as 'here is the report' is included."
+        )
     # Create the Agent
     agent = Assistant(
         name="agent",
