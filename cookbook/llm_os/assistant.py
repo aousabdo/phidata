@@ -34,6 +34,7 @@ def get_llm_os(
     ddg_search: bool = False,
     file_tools: bool = False,
     shell_tools: bool = False,
+    finance_tools: bool = False,
     data_analyst: bool = False,
     python_assistant: bool = False,
     research_assistant: bool = False,
@@ -62,6 +63,10 @@ def get_llm_os(
         )
     if ddg_search:
         tools.append(DuckDuckGo(fixed_max_results=3))
+    if finance_tools:
+        tools.append(
+            YFinanceTools(stock_price=True, company_info=True, analyst_recommendations=True, company_news=True)
+        )
     if shell_tools:
         tools.append(ShellTools())
         extra_instructions.append(
